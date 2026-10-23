@@ -46,3 +46,50 @@ gov_primary |>
 - **Total Turnout:** The Republican primary drew **1,697,330** total votes across 11 candidates, compared to **1,250,544** total votes across 6 candidates in the Democratic primary.
 - **Frontrunners:** Both primaries had a clear winner with roughly 760,000–810,000 votes. **Byron Donalds** won the Republican primary with **811,131** votes (47.8% of the GOP vote), while **David Jolly and Gwen Graham** won the Democratic primary with **762,160** votes (60.9% of the Democratic vote).
 - **Competitiveness:** The Democratic frontrunner won by a wider share of the party vote, whereas the Republican primary had a stronger second-place challenger in **Jay Collins** (**427,014** votes, or 25.2%), compared to Democratic runner-up **Dayna Marie Foster** (**189,421** votes, or 15.1%).
+
+### Voting Trends by County
+
+```{r}
+# Compute Republican share of major-party primary votes in each county
+county_trends <- raw_results |>
+  filter(X12 == "Governor", X16 %in% c("REP", "DEM")) |>
+  summarize(votes = sum(X19, na.rm = TRUE), .by = c(X2, X16)) |>
+  pivot_wider(names_from = X16, values_from = votes, values_fill = 0) |>
+  mutate(
+    rep_share = REP / (REP + DEM),
+    # Match county names to ggplot2 map_data("county", region = "florida")
+    subregion = str_to_lower(X2) |>
+      recode(
+        "desoto" = "de soto",
+        "st. johns" = "st johns",
+        "st. lucie" = "st lucie"
+      )
+  )
+
+# Join county election totals to Florida county polygon coordinates
+fl_map <- map_data("county", region = "florida") |>
+  left_join(county_trends, by = "subregion")
+
+# Map county-level primary voting balance (Blue = more DEM votes, Red = more REP votes)
+ggplot(fl_map, aes(x = long, y = lat, group = group, fill = rep_share)) +
+  geom_polygon(color = "white", linewidth = 0.2) +
+  coord_quickmap() +
+  scale_fill_gradient2(
+    low = "steelblue",
+    mid = "white",
+    high = "firebrick",
+    midpoint = 0.5,
+    labels = scales::label_percent(),
+    name = "Republican Share\nof Primary Votes"
+  ) +
+  labs(
+    title = "2026 Florida Gubernatorial Primary Turnout Balance by County",
+    subtitle = "Share of major-party gubernatorial primary votes cast in the Republican vs. Democratic primary",
+    caption = "Source: Florida Department of State"
+  ) +
+  theme_void()
+```
+
+- **Democratic-Leaning Counties:** Only 8 of Florida's 67 counties had more votes cast in the Democratic gubernatorial primary than in the Republican primary, led by **Gadsden** (75.3% Democratic), **Broward** (70.3%), **Alachua** (63.8%), **Leon** (63.6%), **Orange** (59.4%), **Palm Beach** (55.8%), **Miami-Dade** (55.1%), and **Osceola** (51.6%).
+- **Evenly Split Metro Counties:** **Duval** (50.2% Republican) and **Hillsborough** (51.7% Republican) were nearly evenly divided between the two parties' primaries.
+- **Republican-Dominated Counties:** Rural counties in the Panhandle and North Florida saw overwhelming Republican primary participation, topped by **Holmes** (90.2% Republican), **Gilchrist** (88.4%), **Lafayette** (88.2%), **Baker** (88.1%), and **Walton** (88.0%).
