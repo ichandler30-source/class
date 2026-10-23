@@ -71,7 +71,7 @@ fl_map <- map_data("county", region = "florida") |>
   left_join(county_trends, by = "subregion")
 
 # Map county-level primary voting balance (Blue = more DEM votes, Red = more REP votes)
-ggplot(fl_map, aes(x = long, y = lat, group = group, fill = rep_share)) +
+map_plot <- ggplot(fl_map, aes(x = long, y = lat, group = group, fill = rep_share)) +
   geom_polygon(color = "white", linewidth = 0.2) +
   coord_quickmap() +
   scale_fill_gradient2(
@@ -87,7 +87,11 @@ ggplot(fl_map, aes(x = long, y = lat, group = group, fill = rep_share)) +
     subtitle = "Share of major-party gubernatorial primary votes cast in the Republican vs. Democratic primary",
     caption = "Source: Florida Department of State"
   ) +
-  theme_void()
+  theme_void() +
+  theme(plot.background = element_rect(fill = "white", color = NA))
+
+ggsave("county_map.png", plot = map_plot, width = 8, height = 6, dpi = 300)
+map_plot
 ```
 
 - **Democratic-Leaning Counties:** Only 8 of Florida's 67 counties had more votes cast in the Democratic gubernatorial primary than in the Republican primary, led by **Gadsden** (75.3% Democratic), **Broward** (70.3%), **Alachua** (63.8%), **Leon** (63.6%), **Orange** (59.4%), **Palm Beach** (55.8%), **Miami-Dade** (55.1%), and **Osceola** (51.6%).
